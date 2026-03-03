@@ -49,6 +49,9 @@ th, td{
     border:1px solid #d4af37;
     padding:8px;
 }
+h3{
+    cursor:pointer;
+}
 </style>
 </head>
 
@@ -65,17 +68,24 @@ th, td{
 </div>
 
 <div class="container hidden" id="sistema">
+
 <p>Empleado: <span id="empleadoActivo"></span></p>
 <p>Hora de entrada: <span id="horaEntrada"></span></p>
 
 <hr>
 
-<h3>Stock Disponible</h3>
-<div id="stock"></div>
+<!-- STOCK RETRÁCTIL -->
+<h3 onclick="toggleSeccion('stockBox')">📦 Stock Disponible</h3>
+<div id="stockBox" class="hidden">
+    <div id="stock"></div>
+</div>
 
 <hr>
 
-<h3>Registrar Venta</h3>
+<!-- VENTA RETRÁCTIL -->
+<h3 onclick="toggleSeccion('ventaBox')">💰 Registrar Venta</h3>
+<div id="ventaBox" class="hidden">
+
 <select id="plantaVenta"></select>
 <input type="number" id="cantidadVenta" placeholder="Cantidad">
 
@@ -91,17 +101,18 @@ th, td{
 
 <button onclick="registrarVenta()">Confirmar Venta</button>
 
+</div>
+
 <hr>
 
 <h3>Total vendido hoy: $<span id="totalDia">0</span></h3>
 
 <button onclick="cerrarDia()">Registrar Cierre</button>
 <p id="cierreInfo"></p>
+
 </div>
 
 <script type="module">
-
-/* ================= FIREBASE ================= */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
@@ -119,11 +130,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* ===== EMPLEADOS ===== */
+/* EMPLEADOS */
 const empleados = ["Emp1","Emp2","Emp3"];
 const claveEmpleado = "ViverosRDMempl";
 
-/* ===== DATOS ===== */
+/* DATOS */
 let plantas = {};
 let ventas = [];
 let descuentosAutorizados = {};
@@ -131,7 +142,12 @@ let descuentosAutorizados = {};
 let empleadoActual = null;
 let precioModificado = null;
 
-/* ===== ESCUCHAR CAMBIOS EN TIEMPO REAL ===== */
+/* TOGGLE VISUAL */
+window.toggleSeccion = function(id){
+    document.getElementById(id).classList.toggle("hidden");
+}
+
+/* TIEMPO REAL */
 function escucharCambios(){
     const dbRef = ref(db);
     onValue(dbRef, (snapshot) => {
@@ -147,7 +163,7 @@ function escucharCambios(){
     });
 }
 
-/* ===== LOGIN ===== */
+/* LOGIN */
 window.login = function(){
     let user = document.getElementById("usuario").value;
     let pass = document.getElementById("clave").value;
@@ -169,7 +185,7 @@ window.login = function(){
     escucharCambios();
 }
 
-/* ===== STOCK ===== */
+/* STOCK */
 function cargarStock(){
     let div = document.getElementById("stock");
     div.innerHTML="";
@@ -206,7 +222,7 @@ function calcularTotal(){
     document.getElementById("totalCobro").innerText = cantidad * precioModificado;
 }
 
-/* ===== DESCUENTO ===== */
+/* DESCUENTO */
 window.mostrarDescuento = function(){
     document.getElementById("descuentoBox").classList.toggle("hidden");
 }
@@ -225,7 +241,7 @@ window.activarDescuento = function(){
     }
 }
 
-/* ===== REGISTRAR VENTA ===== */
+/* REGISTRAR VENTA */
 window.registrarVenta = async function(){
     let nombre = document.getElementById("plantaVenta").value;
     let cantidad = parseInt(document.getElementById("cantidadVenta").value);
@@ -254,7 +270,7 @@ window.registrarVenta = async function(){
     alert("Venta registrada");
 }
 
-/* ===== TOTAL DEL DÍA ===== */
+/* TOTAL DIA */
 function calcularTotalDia(){
     let hoy = new Date().toLocaleDateString();
     let total = ventas
@@ -264,7 +280,7 @@ function calcularTotalDia(){
     document.getElementById("totalDia").innerText = total;
 }
 
-/* ===== CIERRE ===== */
+/* CIERRE */
 window.cerrarDia = function(){
     let cierre = "Cierre registrado: "+new Date().toLocaleString();
     document.getElementById("cierreInfo").innerText = cierre;
