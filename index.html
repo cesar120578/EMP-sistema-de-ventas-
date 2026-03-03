@@ -2,281 +2,275 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Viveros RDM - EMP 1.0</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Viveros RDM.empl.1.0</title>
 
 <style>
 body{
-    background:black;
-    color:gold;
-    font-family:Arial;
+    font-family: Arial;
+    background:#000;
+    color:#d4af37;
     text-align:center;
+    margin:0;
 }
-
-.logo{
-    font-size:28px;
-    font-weight:bold;
-    margin-top:10px;
-}
-
-.section{
+.container{
+    background:#111;
     width:90%;
+    max-width:900px;
     margin:25px auto;
-    border:1px solid gold;
-    border-radius:10px;
     padding:20px;
+    border-radius:15px;
+    box-shadow:0 0 15px rgba(212,175,55,0.4);
 }
-
-h2{
-    cursor:pointer;
-    border-bottom:1px solid gold;
-    padding-bottom:8px;
-}
-
-.hidden{
-    display:none;
-}
-
-input,select,button{
-    padding:8px;
+input, select, button{
+    padding:10px;
     margin:6px;
-    border-radius:6px;
-    border:none;
+    width:85%;
+    border-radius:8px;
+    border:1px solid #d4af37;
+    background:#000;
+    color:#d4af37;
 }
-
 button{
-    background:gold;
+    background:#d4af37;
     color:black;
     font-weight:bold;
     cursor:pointer;
 }
-
 button:hover{
-    background:#d4af37;
+    background:#f0c75e;
 }
-
+.hidden{ display:none; }
 table{
     width:100%;
-    border-collapse:collapse;
     margin-top:15px;
-    font-size:18px;
+    border-collapse:collapse;
 }
-
-th,td{
-    border:1px solid gold;
-    padding:10px;
-}
-
-th{
-    background:#111;
-}
-
-canvas{
-    margin-top:20px;
-}
-
-#loginBox{
-    margin-top:100px;
+th, td{
+    border:1px solid #d4af37;
+    padding:8px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="loginBox">
-    <h2>Iniciar Sesión</h2>
-    <input id="usuarioInput" placeholder="Usuario">
-    <input id="claveInput" type="password" placeholder="Contraseña">
-    <button onclick="login()">Ingresar</button>
+<h2>🌿 Viveros RDM.empl.1.0</h2>
+
+<div class="container" id="loginDiv">
+<h3>Ingreso Empleado</h3>
+<input type="text" id="usuario">
+<input type="password" id="clave">
+<button onclick="login()">Entrar</button>
+<p id="error"></p>
 </div>
 
-<!-- SISTEMA -->
-<div id="sistema" class="hidden">
+<div class="container hidden" id="sistema">
+<p>Empleado: <span id="empleadoActivo"></span></p>
+<p>Hora de entrada: <span id="horaEntrada"></span></p>
 
-<div class="logo">🌿 VIVEROS RDM 🌿</div>
-<div>
-Usuario activo: <span id="usuarioActivo"></span>
-<button onclick="cerrarSesion()">Cerrar sesión</button>
+<hr>
+
+<h3>Stock Disponible</h3>
+<div id="stock"></div>
+
+<hr>
+
+<h3>Registrar Venta</h3>
+<select id="plantaVenta"></select>
+<input type="number" id="cantidadVenta" placeholder="Cantidad">
+
+<button onclick="mostrarDescuento()">Solicitar descuento</button>
+
+<div id="descuentoBox" class="hidden">
+<input type="password" id="claveDescuento" placeholder="Clave autorizada">
+<button onclick="activarDescuento()">Aplicar</button>
 </div>
 
-<!-- INVENTARIO -->
-<div class="section">
-<h2 onclick="toggle('inventarioDiv')">Inventario</h2>
-<div id="inventarioDiv" class="hidden">
-<table>
-<thead>
-<tr>
-<th>Planta</th>
-<th>Precio</th>
-<th>Stock</th>
-</tr>
-</thead>
-<tbody id="tablaInventario"></tbody>
-</table>
-</div>
+<p>Precio actual: $<span id="precioActual">0</span></p>
+<p>Total a cobrar: $<span id="totalCobro">0</span></p>
+
+<button onclick="registrarVenta()">Confirmar Venta</button>
+
+<hr>
+
+<h3>Total vendido hoy: $<span id="totalDia">0</span></h3>
+
+<button onclick="cerrarDia()">Registrar Cierre</button>
+<p id="cierreInfo"></p>
 </div>
 
-<!-- VENTAS -->
-<div class="section">
-<h2 onclick="toggle('ventasDiv')">Registrar Venta</h2>
-<div id="ventasDiv" class="hidden">
-<select id="ventaNombre"></select>
-<input id="ventaCantidad" type="number" placeholder="Cantidad">
-<button onclick="registrarVenta()">Vender</button>
-</div>
-</div>
+<script type="module">
 
-<!-- REPORTE DEL DÍA -->
-<div class="section">
-<h2 onclick="toggle('reporteDiv')">📅 Reporte del Día</h2>
-<div id="reporteDiv" class="hidden">
+/* ================= FIREBASE ================= */
 
-<h4>Total del Día: $<span id="totalDia">0</span></h4>
-<canvas id="graficaDia"></canvas>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
 
-<table>
-<thead>
-<tr>
-<th>Planta</th>
-<th>Cantidad</th>
-<th>Precio</th>
-<th>Total</th>
-<th>Fecha</th>
-</tr>
-</thead>
-<tbody id="tablaDia"></tbody>
-</table>
+const firebaseConfig = {
+  apiKey: "AIzaSyBSZucWCiY1C24XTVDu1MtC0ZRWZjmHSC0",
+  authDomain: "sistema-vivero.firebaseapp.com",
+  databaseURL: "https://sistema-vivero-default-rtdb.firebaseio.com",
+  projectId: "sistema-vivero",
+  storageBucket: "sistema-vivero.firebasestorage.app",
+  messagingSenderId: "325664184257",
+  appId: "1:325664184257:web:8af25c6bdb65b51623c140"
+};
 
-</div>
-</div>
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-</div>
+/* ===== EMPLEADOS ===== */
+const empleados = ["Emp1","Emp2","Emp3"];
+const claveEmpleado = "ViverosRDMempl";
 
-<script>
+/* ===== DATOS ===== */
+let plantas = {};
+let ventas = [];
+let descuentosAutorizados = {};
 
-const admins=["César","Oswaldo","Hanalih","Sofia","Valeria"];
-const empleados=["Emp1","Emp2","Emp3"];
-const claveAdmin="ViverosRDM12";
-const claveEmpleado="ViverosRDMempl";
+let empleadoActual = null;
+let precioModificado = null;
 
-let usuarioActual="";
-let plantas=JSON.parse(localStorage.getItem("plantas"))||{};
-let ventas=JSON.parse(localStorage.getItem("ventas"))||[];
-let ventasDia=JSON.parse(localStorage.getItem("ventasDia"))||[];
-let ventasHistorico=JSON.parse(localStorage.getItem("ventasHistorico"))||[];
-
-let graficaDia;
-
-/* LOGIN */
-function login(){
-    let u=usuarioInput.value;
-    let c=claveInput.value;
-
-    if(empleados.includes(u)&&c===claveEmpleado){
-        usuarioActual=u;
-        loginBox.classList.add("hidden");
-        sistema.classList.remove("hidden");
-        usuarioActivo.innerText=usuarioActual;
-        actualizarTodo();
-    } else alert("Acceso solo para empleados");
-}
-
-function cerrarSesion(){ location.reload(); }
-
-function guardar(){
-    localStorage.setItem("plantas",JSON.stringify(plantas));
-    localStorage.setItem("ventas",JSON.stringify(ventas));
-    localStorage.setItem("ventasDia",JSON.stringify(ventasDia));
-    localStorage.setItem("ventasHistorico",JSON.stringify(ventasHistorico));
-}
-
-function toggle(id){ document.getElementById(id).classList.toggle("hidden"); }
-function ordenar(){ return Object.keys(plantas).sort((a,b)=>a.localeCompare(b)); }
-
-function actualizarInventario(){
-    tablaInventario.innerHTML="";
-    ordenar().forEach(nombre=>{
-        tablaInventario.innerHTML+=`
-        <tr>
-        <td>${nombre}</td>
-        <td>$${plantas[nombre].precio}</td>
-        <td>${plantas[nombre].inventario}</td>
-        </tr>`;
-    });
-}
-
-function actualizarSelect(){
-    let s=document.getElementById("ventaNombre");
-    s.innerHTML="";
-    ordenar().forEach(nombre=>{
-        s.innerHTML+=`<option value="${nombre}">${nombre}</option>`;
-    });
-}
-
-function registrarVenta(){
-    let n=ventaNombre.value;
-    let c=parseInt(ventaCantidad.value);
-    if(!c||c<=0||plantas[n].inventario<c) return alert("Error");
-
-    plantas[n].inventario-=c;
-
-    let ventaObj={
-        nombre:n,
-        cantidad:c,
-        precio:plantas[n].precio,
-        total:c*plantas[n].precio,
-        fecha:new Date().toLocaleString(),
-        usuario:usuarioActual
-    };
-
-    ventas.push(ventaObj);
-    ventasDia.push(ventaObj);
-    ventasHistorico.push(ventaObj);
-
-    guardar(); actualizarTodo();
-}
-
-function actualizarReporteDia(){
-    let totalD=0;
-    tablaDia.innerHTML="";
-    let conteoDia={};
-
-    ventasDia.forEach(v=>{
-        totalD+=v.total;
-        tablaDia.innerHTML+=`
-        <tr>
-        <td>${v.nombre}</td>
-        <td>${v.cantidad}</td>
-        <td>$${v.precio}</td>
-        <td>$${v.total}</td>
-        <td>${v.fecha}</td>
-        </tr>`;
-        conteoDia[v.nombre]=(conteoDia[v.nombre]||0)+v.cantidad;
-    });
-
-    totalDia.innerText=totalD;
-
-    if(graficaDia) graficaDia.destroy();
-    graficaDia=new Chart(document.getElementById("graficaDia"),{
-        type:"bar",
-        data:{
-            labels:Object.keys(conteoDia),
-            datasets:[{
-                label:"Ventas del Día",
-                data:Object.values(conteoDia)
-            }]
+/* ===== ESCUCHAR CAMBIOS EN TIEMPO REAL ===== */
+function escucharCambios(){
+    const dbRef = ref(db);
+    onValue(dbRef, (snapshot) => {
+        if(snapshot.exists()){
+            const data = snapshot.val();
+            plantas = data.plantas || {};
+            ventas = data.ventas || [];
+            descuentosAutorizados = data.descuentos || {};
+            cargarStock();
+            actualizarSelect();
+            calcularTotalDia();
         }
     });
 }
 
-function actualizarTodo(){
-    actualizarInventario();
-    actualizarSelect();
-    actualizarReporteDia();
+/* ===== LOGIN ===== */
+window.login = function(){
+    let user = document.getElementById("usuario").value;
+    let pass = document.getElementById("clave").value;
+
+    if(!empleados.includes(user) || pass !== claveEmpleado){
+        document.getElementById("error").innerText="Credenciales incorrectas";
+        return;
+    }
+
+    empleadoActual = user;
+
+    let ahora = new Date();
+    document.getElementById("horaEntrada").innerText = ahora.toLocaleString();
+
+    document.getElementById("empleadoActivo").innerText = user;
+    document.getElementById("loginDiv").classList.add("hidden");
+    document.getElementById("sistema").classList.remove("hidden");
+
+    escucharCambios();
+}
+
+/* ===== STOCK ===== */
+function cargarStock(){
+    let div = document.getElementById("stock");
+    div.innerHTML="";
+    for(let nombre in plantas){
+        div.innerHTML += nombre+" - Stock: "+plantas[nombre].inventario+"<br>";
+    }
+}
+
+function actualizarSelect(){
+    let select = document.getElementById("plantaVenta");
+    select.innerHTML="";
+    for(let nombre in plantas){
+        let option = document.createElement("option");
+        option.value=nombre;
+        option.text=nombre;
+        select.appendChild(option);
+    }
+    actualizarPrecio();
+}
+
+document.getElementById("plantaVenta").addEventListener("change", actualizarPrecio);
+document.getElementById("cantidadVenta").addEventListener("input", calcularTotal);
+
+function actualizarPrecio(){
+    let nombre = document.getElementById("plantaVenta").value;
+    if(!plantas[nombre]) return;
+    precioModificado = plantas[nombre].precio;
+    document.getElementById("precioActual").innerText = precioModificado;
+    calcularTotal();
+}
+
+function calcularTotal(){
+    let cantidad = parseInt(document.getElementById("cantidadVenta").value) || 0;
+    document.getElementById("totalCobro").innerText = cantidad * precioModificado;
+}
+
+/* ===== DESCUENTO ===== */
+window.mostrarDescuento = function(){
+    document.getElementById("descuentoBox").classList.toggle("hidden");
+}
+
+window.activarDescuento = function(){
+    let clave = document.getElementById("claveDescuento").value;
+    let nombre = document.getElementById("plantaVenta").value;
+
+    if(descuentosAutorizados[nombre] && descuentosAutorizados[nombre].clave === clave){
+        precioModificado = descuentosAutorizados[nombre].nuevoPrecio;
+        document.getElementById("precioActual").innerText = precioModificado;
+        calcularTotal();
+        alert("Descuento aplicado");
+    }else{
+        alert("Clave incorrecta o no autorizada");
+    }
+}
+
+/* ===== REGISTRAR VENTA ===== */
+window.registrarVenta = async function(){
+    let nombre = document.getElementById("plantaVenta").value;
+    let cantidad = parseInt(document.getElementById("cantidadVenta").value);
+
+    if(!plantas[nombre] || cantidad<=0) return;
+    if(plantas[nombre].inventario < cantidad) return;
+
+    plantas[nombre].inventario -= cantidad;
+
+    let venta = {
+        nombre,
+        cantidad,
+        precio: precioModificado,
+        total: cantidad*precioModificado,
+        fecha: new Date().toLocaleString(),
+        empleado: empleadoActual
+    };
+
+    ventas.push(venta);
+
+    await update(ref(db), {
+        plantas: plantas,
+        ventas: ventas
+    });
+
+    alert("Venta registrada");
+}
+
+/* ===== TOTAL DEL DÍA ===== */
+function calcularTotalDia(){
+    let hoy = new Date().toLocaleDateString();
+    let total = ventas
+        .filter(v => new Date(v.fecha).toLocaleDateString() === hoy)
+        .reduce((sum,v)=>sum+v.total,0);
+
+    document.getElementById("totalDia").innerText = total;
+}
+
+/* ===== CIERRE ===== */
+window.cerrarDia = function(){
+    let cierre = "Cierre registrado: "+new Date().toLocaleString();
+    document.getElementById("cierreInfo").innerText = cierre;
 }
 
 </script>
+
 </body>
 </html>
