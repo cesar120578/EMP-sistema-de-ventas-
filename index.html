@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Viveros RDM - EMP 1.0</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    background:black;
+    color:gold;
+    font-family:Arial;
+    text-align:center;
+}
+
+.logo{
+    font-size:28px;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+.section{
+    width:90%;
+    margin:25px auto;
+    border:1px solid gold;
+    border-radius:10px;
+    padding:20px;
+}
+
+h2{
+    cursor:pointer;
+    border-bottom:1px solid gold;
+    padding-bottom:8px;
+}
+
+.hidden{
+    display:none;
+}
+
+input,select,button{
+    padding:8px;
+    margin:6px;
+    border-radius:6px;
+    border:none;
+}
+
+button{
+    background:gold;
+    color:black;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#d4af37;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+    font-size:18px;
+}
+
+th,td{
+    border:1px solid gold;
+    padding:10px;
+}
+
+th{
+    background:#111;
+}
+
+canvas{
+    margin-top:20px;
+}
+
+#loginBox{
+    margin-top:100px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginBox">
+    <h2>Iniciar Sesión</h2>
+    <input id="usuarioInput" placeholder="Usuario">
+    <input id="claveInput" type="password" placeholder="Contraseña">
+    <button onclick="login()">Ingresar</button>
+</div>
+
+<!-- SISTEMA -->
+<div id="sistema" class="hidden">
+
+<div class="logo">🌿 VIVEROS RDM 🌿</div>
+<div>
+Usuario activo: <span id="usuarioActivo"></span>
+<button onclick="cerrarSesion()">Cerrar sesión</button>
+</div>
+
+<!-- INVENTARIO -->
+<div class="section">
+<h2 onclick="toggle('inventarioDiv')">Inventario</h2>
+<div id="inventarioDiv" class="hidden">
+<table>
+<thead>
+<tr>
+<th>Planta</th>
+<th>Precio</th>
+<th>Stock</th>
+</tr>
+</thead>
+<tbody id="tablaInventario"></tbody>
+</table>
+</div>
+</div>
+
+<!-- VENTAS -->
+<div class="section">
+<h2 onclick="toggle('ventasDiv')">Registrar Venta</h2>
+<div id="ventasDiv" class="hidden">
+<select id="ventaNombre"></select>
+<input id="ventaCantidad" type="number" placeholder="Cantidad">
+<button onclick="registrarVenta()">Vender</button>
+</div>
+</div>
+
+<!-- REPORTE DEL DÍA -->
+<div class="section">
+<h2 onclick="toggle('reporteDiv')">📅 Reporte del Día</h2>
+<div id="reporteDiv" class="hidden">
+
+<h4>Total del Día: $<span id="totalDia">0</span></h4>
+<canvas id="graficaDia"></canvas>
+
+<table>
+<thead>
+<tr>
+<th>Planta</th>
+<th>Cantidad</th>
+<th>Precio</th>
+<th>Total</th>
+<th>Fecha</th>
+</tr>
+</thead>
+<tbody id="tablaDia"></tbody>
+</table>
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+const admins=["César","Oswaldo","Hanalih","Sofia","Valeria"];
+const empleados=["Emp1","Emp2","Emp3"];
+const claveAdmin="ViverosRDM12";
+const claveEmpleado="ViverosRDMempl";
+
+let usuarioActual="";
+let plantas=JSON.parse(localStorage.getItem("plantas"))||{};
+let ventas=JSON.parse(localStorage.getItem("ventas"))||[];
+let ventasDia=JSON.parse(localStorage.getItem("ventasDia"))||[];
+let ventasHistorico=JSON.parse(localStorage.getItem("ventasHistorico"))||[];
+
+let graficaDia;
+
+/* LOGIN */
+function login(){
+    let u=usuarioInput.value;
+    let c=claveInput.value;
+
+    if(empleados.includes(u)&&c===claveEmpleado){
+        usuarioActual=u;
+        loginBox.classList.add("hidden");
+        sistema.classList.remove("hidden");
+        usuarioActivo.innerText=usuarioActual;
+        actualizarTodo();
+    } else alert("Acceso solo para empleados");
+}
+
+function cerrarSesion(){ location.reload(); }
+
+function guardar(){
+    localStorage.setItem("plantas",JSON.stringify(plantas));
+    localStorage.setItem("ventas",JSON.stringify(ventas));
+    localStorage.setItem("ventasDia",JSON.stringify(ventasDia));
+    localStorage.setItem("ventasHistorico",JSON.stringify(ventasHistorico));
+}
+
+function toggle(id){ document.getElementById(id).classList.toggle("hidden"); }
+function ordenar(){ return Object.keys(plantas).sort((a,b)=>a.localeCompare(b)); }
+
+function actualizarInventario(){
+    tablaInventario.innerHTML="";
+    ordenar().forEach(nombre=>{
+        tablaInventario.innerHTML+=`
+        <tr>
+        <td>${nombre}</td>
+        <td>$${plantas[nombre].precio}</td>
+        <td>${plantas[nombre].inventario}</td>
+        </tr>`;
+    });
+}
+
+function actualizarSelect(){
+    let s=document.getElementById("ventaNombre");
+    s.innerHTML="";
+    ordenar().forEach(nombre=>{
+        s.innerHTML+=`<option value="${nombre}">${nombre}</option>`;
+    });
+}
+
+function registrarVenta(){
+    let n=ventaNombre.value;
+    let c=parseInt(ventaCantidad.value);
+    if(!c||c<=0||plantas[n].inventario<c) return alert("Error");
+
+    plantas[n].inventario-=c;
+
+    let ventaObj={
+        nombre:n,
+        cantidad:c,
+        precio:plantas[n].precio,
+        total:c*plantas[n].precio,
+        fecha:new Date().toLocaleString(),
+        usuario:usuarioActual
+    };
+
+    ventas.push(ventaObj);
+    ventasDia.push(ventaObj);
+    ventasHistorico.push(ventaObj);
+
+    guardar(); actualizarTodo();
+}
+
+function actualizarReporteDia(){
+    let totalD=0;
+    tablaDia.innerHTML="";
+    let conteoDia={};
+
+    ventasDia.forEach(v=>{
+        totalD+=v.total;
+        tablaDia.innerHTML+=`
+        <tr>
+        <td>${v.nombre}</td>
+        <td>${v.cantidad}</td>
+        <td>$${v.precio}</td>
+        <td>$${v.total}</td>
+        <td>${v.fecha}</td>
+        </tr>`;
+        conteoDia[v.nombre]=(conteoDia[v.nombre]||0)+v.cantidad;
+    });
+
+    totalDia.innerText=totalD;
+
+    if(graficaDia) graficaDia.destroy();
+    graficaDia=new Chart(document.getElementById("graficaDia"),{
+        type:"bar",
+        data:{
+            labels:Object.keys(conteoDia),
+            datasets:[{
+                label:"Ventas del Día",
+                data:Object.values(conteoDia)
+            }]
+        }
+    });
+}
+
+function actualizarTodo(){
+    actualizarInventario();
+    actualizarSelect();
+    actualizarReporteDia();
+}
+
+</script>
+</body>
+</html>
