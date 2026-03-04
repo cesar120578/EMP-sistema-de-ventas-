@@ -52,6 +52,16 @@ th, td{
 h3{
     cursor:pointer;
 }
+
+/* NUEVO ESTILO CONFIRMACIÓN */
+#mensajeVenta{
+    margin-top:10px;
+    padding:8px;
+    border-radius:8px;
+    background:#1e4620;
+    color:#7CFC00;
+    font-weight:bold;
+}
 </style>
 </head>
 
@@ -74,7 +84,6 @@ h3{
 
 <hr>
 
-<!-- STOCK RETRÁCTIL -->
 <h3 onclick="toggleSeccion('stockBox')">📦 Stock Disponible</h3>
 <div id="stockBox" class="hidden">
     <div id="stock"></div>
@@ -82,7 +91,6 @@ h3{
 
 <hr>
 
-<!-- VENTA RETRÁCTIL -->
 <h3 onclick="toggleSeccion('ventaBox')">💰 Registrar Venta</h3>
 <div id="ventaBox" class="hidden">
 
@@ -100,6 +108,9 @@ h3{
 <p>Total a cobrar: $<span id="totalCobro">0</span></p>
 
 <button onclick="registrarVenta()">Confirmar Venta</button>
+
+<!-- NUEVO MENSAJE VISUAL -->
+<p id="mensajeVenta" class="hidden"></p>
 
 </div>
 
@@ -185,13 +196,16 @@ window.login = function(){
     escucharCambios();
 }
 
-/* STOCK */
+/* STOCK ORDENADO */
 function cargarStock(){
     let div = document.getElementById("stock");
     div.innerHTML="";
-    for(let nombre in plantas){
+
+    let nombres = Object.keys(plantas).sort((a,b)=>a.localeCompare(b));
+
+    nombres.forEach(nombre=>{
         div.innerHTML += nombre+" - Stock: "+plantas[nombre].inventario+"<br>";
-    }
+    });
 }
 
 function actualizarSelect(){
@@ -266,6 +280,15 @@ window.registrarVenta = async function(){
         plantas: plantas,
         ventas: ventas
     });
+
+    /* NUEVA CONFIRMACIÓN VISUAL */
+    let mensaje = document.getElementById("mensajeVenta");
+    mensaje.innerText = "✅ Venta registrada correctamente";
+    mensaje.classList.remove("hidden");
+
+    setTimeout(()=>{
+        mensaje.classList.add("hidden");
+    },3000);
 
     alert("Venta registrada");
 }
