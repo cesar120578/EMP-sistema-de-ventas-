@@ -90,7 +90,18 @@ Hora de entrada: <span id="horaEntrada"></span>
 <div class="section">
 <h2 onclick="toggle('stockBox')">📦 Stock Disponible</h2>
 <div id="stockBox" class="hidden">
-<div id="stock"></div>
+
+<table>
+<thead>
+<tr>
+<th>Planta</th>
+<th>Precio</th>
+<th>Stock</th>
+</tr>
+</thead>
+<tbody id="tablaStock"></tbody>
+</table>
+
 </div>
 </div>
 
@@ -199,12 +210,17 @@ window.login = function(){
     escucharCambios();
 }
 
-/* STOCK ORDENADO */
+/* STOCK ORDENADO EN TABLA */
 function cargarStock(){
-    stock.innerHTML="";
+    tablaStock.innerHTML="";
     let nombres = Object.keys(plantas).sort((a,b)=>a.localeCompare(b));
     nombres.forEach(nombre=>{
-        stock.innerHTML += nombre+" - Stock: "+plantas[nombre].inventario+"<br>";
+        tablaStock.innerHTML += `
+        <tr>
+            <td>${nombre}</td>
+            <td>$${plantas[nombre].precio}</td>
+            <td>${plantas[nombre].inventario}</td>
+        </tr>`;
     });
 }
 
