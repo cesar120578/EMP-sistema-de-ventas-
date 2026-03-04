@@ -6,54 +6,55 @@
 
 <style>
 body{
-    font-family: Arial;
-    background:#000;
-    color:#d4af37;
+    background:black;
+    color:gold;
+    font-family:Arial;
     text-align:center;
-    margin:0;
 }
-.container{
-    background:#111;
+.logo{
+    font-size:26px;
+    font-weight:bold;
+    margin-top:10px;
+}
+.section{
     width:90%;
-    max-width:900px;
     margin:25px auto;
+    border:1px solid gold;
+    border-radius:10px;
     padding:20px;
-    border-radius:15px;
-    box-shadow:0 0 15px rgba(212,175,55,0.4);
 }
-input, select, button{
-    padding:10px;
+h2{
+    cursor:pointer;
+    border-bottom:1px solid gold;
+    padding-bottom:8px;
+}
+.hidden{ display:none; }
+
+input,select,button{
+    padding:8px;
     margin:6px;
-    width:85%;
-    border-radius:8px;
-    border:1px solid #d4af37;
-    background:#000;
-    color:#d4af37;
+    border-radius:6px;
+    border:none;
 }
 button{
-    background:#d4af37;
+    background:gold;
     color:black;
     font-weight:bold;
     cursor:pointer;
 }
-button:hover{
-    background:#f0c75e;
-}
-.hidden{ display:none; }
+button:hover{ background:#d4af37; }
+
 table{
     width:100%;
-    margin-top:15px;
     border-collapse:collapse;
+    margin-top:15px;
 }
-th, td{
-    border:1px solid #d4af37;
+th,td{
+    border:1px solid gold;
     padding:8px;
 }
-h3{
-    cursor:pointer;
-}
 
-/* NUEVO ESTILO CONFIRMACIÓN */
+/* CONFIRMACIÓN VISUAL */
 #mensajeVenta{
     margin-top:10px;
     padding:8px;
@@ -67,31 +68,35 @@ h3{
 
 <body>
 
-<h2>🌿 Viveros RDM.empl.1.0</h2>
+<div class="logo">🌿 VIVEROS RDM 🌿</div>
 
-<div class="container" id="loginDiv">
-<h3>Ingreso Empleado</h3>
-<input type="text" id="usuario">
-<input type="password" id="clave">
+<!-- LOGIN -->
+<div class="section" id="loginDiv">
+<h2>Ingreso Empleado</h2>
+<input type="text" id="usuario" placeholder="Usuario">
+<input type="password" id="clave" placeholder="Contraseña">
 <button onclick="login()">Entrar</button>
 <p id="error"></p>
 </div>
 
-<div class="container hidden" id="sistema">
+<div id="sistema" class="hidden">
 
-<p>Empleado: <span id="empleadoActivo"></span></p>
-<p>Hora de entrada: <span id="horaEntrada"></span></p>
-
-<hr>
-
-<h3 onclick="toggleSeccion('stockBox')">📦 Stock Disponible</h3>
-<div id="stockBox" class="hidden">
-    <div id="stock"></div>
+<div>
+Empleado activo: <span id="empleadoActivo"></span><br>
+Hora de entrada: <span id="horaEntrada"></span>
 </div>
 
-<hr>
+<!-- STOCK -->
+<div class="section">
+<h2 onclick="toggle('stockBox')">📦 Stock Disponible</h2>
+<div id="stockBox" class="hidden">
+<div id="stock"></div>
+</div>
+</div>
 
-<h3 onclick="toggleSeccion('ventaBox')">💰 Registrar Venta</h3>
+<!-- VENTAS -->
+<div class="section">
+<h2 onclick="toggle('ventaBox')">💰 Registrar Venta</h2>
 <div id="ventaBox" class="hidden">
 
 <select id="plantaVenta"></select>
@@ -109,17 +114,17 @@ h3{
 
 <button onclick="registrarVenta()">Confirmar Venta</button>
 
-<!-- NUEVO MENSAJE VISUAL -->
 <p id="mensajeVenta" class="hidden"></p>
 
 </div>
+</div>
 
-<hr>
-
-<h3>Total vendido hoy: $<span id="totalDia">0</span></h3>
-
+<!-- TOTAL -->
+<div class="section">
+<h2>Total vendido hoy: $<span id="totalDia">0</span></h2>
 <button onclick="cerrarDia()">Registrar Cierre</button>
 <p id="cierreInfo"></p>
+</div>
 
 </div>
 
@@ -149,12 +154,11 @@ const claveEmpleado = "ViverosRDMempl";
 let plantas = {};
 let ventas = [];
 let descuentosAutorizados = {};
-
 let empleadoActual = null;
 let precioModificado = null;
 
-/* TOGGLE VISUAL */
-window.toggleSeccion = function(id){
+/* TOGGLE IGUAL QUE ADMIN */
+window.toggle = function(id){
     document.getElementById(id).classList.toggle("hidden");
 }
 
@@ -176,140 +180,124 @@ function escucharCambios(){
 
 /* LOGIN */
 window.login = function(){
-    let user = document.getElementById("usuario").value;
-    let pass = document.getElementById("clave").value;
+    let user = usuario.value;
+    let pass = clave.value;
 
     if(!empleados.includes(user) || pass !== claveEmpleado){
-        document.getElementById("error").innerText="Credenciales incorrectas";
+        error.innerText="Credenciales incorrectas";
         return;
     }
 
     empleadoActual = user;
 
-    let ahora = new Date();
-    document.getElementById("horaEntrada").innerText = ahora.toLocaleString();
+    horaEntrada.innerText = new Date().toLocaleString();
+    empleadoActivo.innerText = user;
 
-    document.getElementById("empleadoActivo").innerText = user;
-    document.getElementById("loginDiv").classList.add("hidden");
-    document.getElementById("sistema").classList.remove("hidden");
+    loginDiv.classList.add("hidden");
+    sistema.classList.remove("hidden");
 
     escucharCambios();
 }
 
 /* STOCK ORDENADO */
 function cargarStock(){
-    let div = document.getElementById("stock");
-    div.innerHTML="";
-
+    stock.innerHTML="";
     let nombres = Object.keys(plantas).sort((a,b)=>a.localeCompare(b));
-
     nombres.forEach(nombre=>{
-        div.innerHTML += nombre+" - Stock: "+plantas[nombre].inventario+"<br>";
+        stock.innerHTML += nombre+" - Stock: "+plantas[nombre].inventario+"<br>";
     });
 }
 
 function actualizarSelect(){
-    let select = document.getElementById("plantaVenta");
-    select.innerHTML="";
+    plantaVenta.innerHTML="";
     for(let nombre in plantas){
-        let option = document.createElement("option");
+        let option=document.createElement("option");
         option.value=nombre;
         option.text=nombre;
-        select.appendChild(option);
+        plantaVenta.appendChild(option);
     }
     actualizarPrecio();
 }
 
-document.getElementById("plantaVenta").addEventListener("change", actualizarPrecio);
-document.getElementById("cantidadVenta").addEventListener("input", calcularTotal);
+plantaVenta.addEventListener("change", actualizarPrecio);
+cantidadVenta.addEventListener("input", calcularTotal);
 
 function actualizarPrecio(){
-    let nombre = document.getElementById("plantaVenta").value;
+    let nombre=plantaVenta.value;
     if(!plantas[nombre]) return;
-    precioModificado = plantas[nombre].precio;
-    document.getElementById("precioActual").innerText = precioModificado;
+    precioModificado=plantas[nombre].precio;
+    precioActual.innerText=precioModificado;
     calcularTotal();
 }
 
 function calcularTotal(){
-    let cantidad = parseInt(document.getElementById("cantidadVenta").value) || 0;
-    document.getElementById("totalCobro").innerText = cantidad * precioModificado;
+    let cantidad=parseInt(cantidadVenta.value)||0;
+    totalCobro.innerText=cantidad*precioModificado;
 }
 
 /* DESCUENTO */
-window.mostrarDescuento = function(){
-    document.getElementById("descuentoBox").classList.toggle("hidden");
+window.mostrarDescuento=function(){
+    descuentoBox.classList.toggle("hidden");
 }
 
-window.activarDescuento = function(){
-    let clave = document.getElementById("claveDescuento").value;
-    let nombre = document.getElementById("plantaVenta").value;
+window.activarDescuento=function(){
+    let claveIngresada=claveDescuento.value;
+    let nombre=plantaVenta.value;
 
-    if(descuentosAutorizados[nombre] && descuentosAutorizados[nombre].clave === clave){
-        precioModificado = descuentosAutorizados[nombre].nuevoPrecio;
-        document.getElementById("precioActual").innerText = precioModificado;
+    if(descuentosAutorizados[nombre] && descuentosAutorizados[nombre].clave===claveIngresada){
+        precioModificado=descuentosAutorizados[nombre].nuevoPrecio;
+        precioActual.innerText=precioModificado;
         calcularTotal();
         alert("Descuento aplicado");
-    }else{
-        alert("Clave incorrecta o no autorizada");
-    }
+    } else alert("Clave incorrecta o no autorizada");
 }
 
 /* REGISTRAR VENTA */
-window.registrarVenta = async function(){
-    let nombre = document.getElementById("plantaVenta").value;
-    let cantidad = parseInt(document.getElementById("cantidadVenta").value);
+window.registrarVenta=async function(){
+    let nombre=plantaVenta.value;
+    let cantidad=parseInt(cantidadVenta.value);
 
-    if(!plantas[nombre] || cantidad<=0) return;
-    if(plantas[nombre].inventario < cantidad) return;
+    if(!plantas[nombre]||cantidad<=0) return;
+    if(plantas[nombre].inventario<cantidad) return;
 
-    plantas[nombre].inventario -= cantidad;
+    plantas[nombre].inventario-=cantidad;
 
-    let venta = {
+    let venta={
         nombre,
         cantidad,
-        precio: precioModificado,
-        total: cantidad*precioModificado,
-        fecha: new Date().toLocaleString(),
-        empleado: empleadoActual
+        precio:precioModificado,
+        total:cantidad*precioModificado,
+        fecha:new Date().toLocaleString(),
+        empleado:empleadoActual
     };
 
     ventas.push(venta);
 
-    await update(ref(db), {
-        plantas: plantas,
-        ventas: ventas
-    });
+    await update(ref(db),{ plantas, ventas });
 
-    /* NUEVA CONFIRMACIÓN VISUAL */
-    let mensaje = document.getElementById("mensajeVenta");
-    mensaje.innerText = "✅ Venta registrada correctamente";
+    let mensaje=mensajeVenta;
+    mensaje.innerText="✅ Venta registrada correctamente";
     mensaje.classList.remove("hidden");
-
-    setTimeout(()=>{
-        mensaje.classList.add("hidden");
-    },3000);
+    setTimeout(()=>mensaje.classList.add("hidden"),3000);
 
     alert("Venta registrada");
 }
 
 /* TOTAL DIA */
 function calcularTotalDia(){
-    let hoy = new Date().toLocaleDateString();
-    let total = ventas
-        .filter(v => new Date(v.fecha).toLocaleDateString() === hoy)
-        .reduce((sum,v)=>sum+v.total,0);
+    let hoy=new Date().toLocaleDateString();
+    let total=ventas
+    .filter(v=>new Date(v.fecha).toLocaleDateString()===hoy)
+    .reduce((sum,v)=>sum+v.total,0);
 
-    document.getElementById("totalDia").innerText = total;
+    totalDia.innerText=total;
 }
 
 /* CIERRE */
-window.cerrarDia = function(){
-    let cierre = "Cierre registrado: "+new Date().toLocaleString();
-    document.getElementById("cierreInfo").innerText = cierre;
+window.cerrarDia=function(){
+    cierreInfo.innerText="Cierre registrado: "+new Date().toLocaleString();
 }
 
 </script>
-
 </body>
 </html>
