@@ -142,7 +142,7 @@ Hora de entrada: <span id="horaEntrada"></span>
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+import { getDatabase, ref, onValue, update, push } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSZucWCiY1C24XTVDu1MtC0ZRWZjmHSC0",
@@ -180,7 +180,7 @@ function escucharCambios(){
         if(snapshot.exists()){
             const data = snapshot.val();
             plantas = data.plantas || {};
-            ventas = data.ventas || [];
+            ventas = data.ventasHistorico ? Object.values(data.ventasHistorico) : [];
             descuentosAutorizados = data.descuentos || {};
             cargarStock();
             actualizarSelect();
@@ -283,13 +283,17 @@ window.registrarVenta=async function(){
         cantidad,
         precio:precioModificado,
         total:cantidad*precioModificado,
-        fecha:new Date().toLocaleString(),
+        fecha: Date.now(),
         empleado:empleadoActual
     };
 
-    ventas.push(venta);
+    
 
-    await update(ref(db),{ plantas, ventas });
+    // Guardar inventario
+await update(ref(db),{ plantas });
+
+// Guardar venta individual
+await push(ref(db, "ventasHistorico"), venta);
 
     let mensaje=mensajeVenta;
     mensaje.innerText="✅ Venta registrada correctamente";
